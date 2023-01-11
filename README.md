@@ -10,3 +10,11 @@
 - 롬복 사용하지 말기
 - 객체지향 생활 체조 참고해서 작성하기
   -  https://hudi.blog/thoughtworks-anthology-object-calisthenics/
+- 챕터 별로 패키지 분리하기
+```
+  - src
+    - main
+      - chap02
+      - chap03
+      - ...
+```
