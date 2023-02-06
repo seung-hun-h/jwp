@@ -9,6 +9,9 @@ import java.net.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
+
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
@@ -36,8 +39,8 @@ public class RequestHandler extends Thread {
     private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes(createHeaderLine(HttpHeaders.CONTENT_TYPE, MediaType.HTML_UTF_8.type()));
+            dos.writeBytes(createHeaderLine(HttpHeaders.CONTENT_LENGTH, String.valueOf(lengthOfBodyContent)));
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
@@ -51,5 +54,9 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private String createHeaderLine(String key, String value) {
+        return String.format("%s: %s\r\n", key, value);
     }
 }
