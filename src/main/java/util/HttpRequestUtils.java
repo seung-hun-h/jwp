@@ -33,8 +33,12 @@ public class HttpRequestUtils {
         }
 
         String[] tokens = values.split(separator);
-        return Arrays.stream(tokens).map(t -> getKeyValue(t, "=")).filter(Objects::nonNull)
-                .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+        return Arrays.stream(tokens)
+            .map(t -> getKeyValue(t, "="))
+            .filter(Objects::nonNull)
+            .collect(
+                Collectors.toMap(Pair::getKey, Pair::getValue)
+            );
     }
 
     static Pair getKeyValue(String keyValue, String regex) {
@@ -52,6 +56,11 @@ public class HttpRequestUtils {
 
     public static Pair parseHeader(String header) {
         return getKeyValue(header, ": ");
+    }
+
+    public static String getUri(String line) {
+        String[] splitLine = line.split(" ");
+        return splitLine[1];
     }
 
     public static class Pair {
