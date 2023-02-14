@@ -58,9 +58,14 @@ public class HttpRequestUtils {
         return getKeyValue(header, ": ");
     }
 
-    public static String getUri(String line) {
+    public static Map<String, String> getFirstHeaderLine(String line) {
         String[] splitLine = line.split(" ");
-        return splitLine[1];
+
+        return Map.of(
+            "method", splitLine[0],
+            "uri", splitLine[1],
+            "protocol", splitLine[2]
+        );
     }
 
     public static class Pair {
