@@ -52,6 +52,10 @@ public class HttpRequest {
 		return httpHeader.getHttpMethod();
 	}
 
+	public HttpHeader getHttpHeader() {
+		return httpHeader;
+	}
+
 	@Override
 	public String toString() {
 		return "HttpRequest{" +

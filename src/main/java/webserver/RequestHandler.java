@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import Handler.ResourceHandler;
 import Handler.UserHandler;
+import com.google.common.net.MediaType;
 import util.HttpRequestUtils;
 
 public class RequestHandler extends Thread {
@@ -45,6 +46,14 @@ public class RequestHandler extends Thread {
             byte[] body = "Hello World".getBytes();
             if (resourceHandler.isPossible(httpRequest)) {
                 body = resourceHandler.serve(httpRequest.getRequestUri());
+                if (resourceHandler.isCssRequest(httpRequest)) {
+                    DataOutputStream dos = new DataOutputStream(out);
+                    response200HeaderWithCss(dos, body.length);
+                    responseBody(dos, body);
+
+
+                }
+
             } else if (userHandler.isPossible(httpRequest)) {
 
                 if (userHandler.isCreateUserRequest(httpRequest)) {
@@ -81,6 +90,17 @@ public class RequestHandler extends Thread {
             DataOutputStream dos = new DataOutputStream(out);
             response200Header(dos, body.length);
             responseBody(dos, body);
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response200HeaderWithCss(DataOutputStream dos, int lengthOfBodyContent) {
+        try {
+            dos.writeBytes("HTTP/1.1 200 OK \r\n");
+            dos.writeBytes("Content-Type: "+ MediaType.CSS_UTF_8 + "\r\n");
+            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
         }

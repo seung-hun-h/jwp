@@ -3,8 +3,12 @@ package Handler;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
+import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
+import webserver.HttpHeader;
 import webserver.HttpRequest;
 
 public class ResourceHandler implements Handler {
@@ -19,6 +23,19 @@ public class ResourceHandler implements Handler {
 			STATIC_RESOURCE_PATTERN.matcher(
 				requestUri
 			).matches();
+	}
+
+	public boolean isCssRequest(HttpRequest httpRequest) {
+		HttpHeader httpHeader = httpRequest.getHttpHeader();
+		String acceptType = httpHeader.getHeader(HttpHeaders.ACCEPT);
+
+		if (acceptType == null) {
+			return false;
+		}
+
+		return Arrays.stream(acceptType.split(","))
+			.map(String::trim)
+			.anyMatch(type -> MediaType.CSS_UTF_8.toString().contains(type));
 	}
 
 	public byte[] serve(String path) throws IOException {
