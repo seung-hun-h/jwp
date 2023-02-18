@@ -48,6 +48,10 @@ public class HttpRequest {
 		return httpBody;
 	}
 
+	public HttpMethod getHttpMethod() {
+		return httpHeader.getHttpMethod();
+	}
+
 	@Override
 	public String toString() {
 		return "HttpRequest{" +

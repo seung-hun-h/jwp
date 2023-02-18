@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ public class RequestHandler extends Thread {
                 body = resourceHandler.serve(httpRequest.getRequestUri());
             } else if (userHandler.isPossible(httpRequest)) {
 
-                if (httpRequest.getRequestUri().equals("/user/create")) {
+                if (userHandler.isCreateUserRequest(httpRequest)) {
                     userHandler.createUser(
                         HttpRequestUtils.parseQueryString(
                             httpRequest.getHttpBody()
@@ -57,12 +58,61 @@ public class RequestHandler extends Thread {
                     response302Header(dos);
                     responseBody(dos, body);
                     return;
+                } else if (userHandler.isLoginRequest(httpRequest)) {
+                    boolean success = userHandler.login(
+                        HttpRequestUtils.parseQueryString(
+                            httpRequest.getHttpBody()
+                        )
+                    );
+
+                    if (!success) {
+                        body = resourceHandler.serve("/user/login_failed.html");
+                        DataOutputStream dos = new DataOutputStream(out);
+                        response401Header(dos, body.length);
+                        responseBody(dos, body);
+                    } else {
+                        DataOutputStream dos = new DataOutputStream(out);
+                        response302HeaderWithCookie(dos, Map.of("logined", "true"));
+                        responseBody(dos, body);
+                    }
                 }
             }
 
             DataOutputStream dos = new DataOutputStream(out);
             response200Header(dos, body.length);
             responseBody(dos, body);
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response302HeaderWithCookie(DataOutputStream dos, Map<String, String> cookies) {
+        try {
+            StringBuilder stringBuilder = new StringBuilder();
+
+            for (Map.Entry<String, String> entry : cookies.entrySet()) {
+                stringBuilder.append(
+                        entry.getKey()
+                    ).append("=")
+                    .append(entry.getValue());
+            }
+
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: /index.html \r\n");
+            dos.writeBytes("Set-Cookie: " + stringBuilder + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response401Header(DataOutputStream dos, int lengthOfBodyContent) {
+        try {
+            dos.writeBytes("HTTP/1.1 401 Unauthorized \r\n");
+            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("WWW-Authenticate: Basic realm=\"Input Correct credentials\"" + "\r\n");
+            dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
         }
