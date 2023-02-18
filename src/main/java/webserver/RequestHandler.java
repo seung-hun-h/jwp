@@ -7,51 +7,57 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import Handler.ResourceHandler;
 import Handler.UserHandler;
-import com.google.common.net.HttpHeaders;
-import com.google.common.net.MediaType;
 import util.HttpRequestUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
-    private static final String STATIC_RESOURCE_ROOT = System.getProperty("user.dir") + "/webapp";
-    private final UserHandler userHandler;
 
     private final Socket connection;
+    private final ResourceHandler resourceHandler;
+    private final UserHandler userHandler;
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
+        this.resourceHandler = new ResourceHandler();
         this.userHandler = new UserHandler();
     }
 
     public void run() {
         log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(),
-            connection.getPort()
-        );
+            connection.getPort());
 
-        try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
-            // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
+        try (InputStream in = connection.getInputStream();
+             OutputStream out = connection.getOutputStream()
+        ) {
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
 
-            Map<String, String> firstHeaderLine = HttpRequestUtils.getFirstHeaderLine(bufferedReader.readLine());
+            HttpRequest httpRequest = HttpRequest.from(bufferedReader);
 
-            String uri = firstHeaderLine.get("uri");
+            log.info("HttpRequest: {}", httpRequest);
 
-            byte[] body;
-            if (uri.startsWith("/user/create")) {
-                String queryString = uri.substring(uri.indexOf("?") + 1);
-                body = userHandler.createUser(HttpRequestUtils.parseQueryString(queryString))
-                    .getBytes();
-            } else {
-                body = Files.readAllBytes(
-                    Path.of(STATIC_RESOURCE_ROOT + uri));
+            byte[] body = "Hello World".getBytes();
+            if (resourceHandler.isPossible(httpRequest)) {
+                body = resourceHandler.serve(httpRequest.getRequestUri());
+            } else if (userHandler.isPossible(httpRequest)) {
+
+                if (httpRequest.getRequestUri().equals("/user/create")) {
+                    userHandler.createUser(
+                        HttpRequestUtils.parseQueryString(
+                            httpRequest.getHttpBody()
+                        )
+                    );
+
+                    DataOutputStream dos = new DataOutputStream(out);
+                    response302Header(dos);
+                    responseBody(dos, body);
+                    return;
+                }
             }
 
             DataOutputStream dos = new DataOutputStream(out);
@@ -65,8 +71,18 @@ public class RequestHandler extends Thread {
     private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes(createHeaderLine(HttpHeaders.CONTENT_TYPE, MediaType.HTML_UTF_8.type()));
-            dos.writeBytes(createHeaderLine(HttpHeaders.CONTENT_LENGTH, String.valueOf(lengthOfBodyContent)));
+            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+            dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response302Header(DataOutputStream dos) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: /index.html \r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
@@ -80,9 +96,5 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
-    }
-
-    private String createHeaderLine(String key, String value) {
-        return String.format("%s: %s\r\n", key, value);
     }
 }
