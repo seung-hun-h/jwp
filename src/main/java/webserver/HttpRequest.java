@@ -8,11 +8,11 @@ import java.util.List;
 import util.IOUtils;
 
 public class HttpRequest {
-	private final HttpHeader httpHeader;
+	private final HttpRequestHeader httpRequestHeader;
 	private final String httpBody;
 
-	private HttpRequest(HttpHeader httpHeader, String httpBody) {
-		this.httpHeader = httpHeader;
+	private HttpRequest(HttpRequestHeader httpRequestHeader, String httpBody) {
+		this.httpRequestHeader = httpRequestHeader;
 		this.httpBody = httpBody;
 	}
 
@@ -28,18 +28,18 @@ public class HttpRequest {
 			line = bufferedReader.readLine();
 		}
 
-		HttpHeader httpHeader = HttpHeader.from(httpHeaders);
+		HttpRequestHeader httpRequestHeader = HttpRequestHeader.from(httpHeaders);
 
 		String body = IOUtils.readData(
 			bufferedReader,
-			httpHeader.getContentLength()
+			httpRequestHeader.getContentLength()
 		);
 
-		return new HttpRequest(httpHeader, body);
+		return new HttpRequest(httpRequestHeader, body);
 	}
 
 	public String getRequestUri() {
-		return this.httpHeader
+		return this.httpRequestHeader
 			.getHttpRequestUri()
 			.getUri();
 	}
@@ -49,17 +49,13 @@ public class HttpRequest {
 	}
 
 	public HttpMethod getHttpMethod() {
-		return httpHeader.getHttpMethod();
-	}
-
-	public HttpHeader getHttpHeader() {
-		return httpHeader;
+		return httpRequestHeader.getHttpMethod();
 	}
 
 	@Override
 	public String toString() {
 		return "HttpRequest{" +
-			"httpHeader=" + httpHeader +
+			"httpHeader=" + httpRequestHeader +
 			", httpBody='" + httpBody + '\'' +
 			'}';
 	}

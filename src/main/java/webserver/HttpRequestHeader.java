@@ -7,19 +7,19 @@ import java.util.Map;
 import com.google.common.net.HttpHeaders;
 import util.HttpRequestUtils;
 
-public class HttpHeader {
+public class HttpRequestHeader {
 	private final HttpMethod httpMethod;
 	private final HttpRequestUri httpRequestUri;
 	private final String protocol;
 	private final Map<String, String> fields = new HashMap<>();
 
-	private HttpHeader(HttpMethod httpMethod, HttpRequestUri httpRequestUri, String protocol) {
+	private HttpRequestHeader(HttpMethod httpMethod, HttpRequestUri httpRequestUri, String protocol) {
 		this.httpMethod = httpMethod;
 		this.httpRequestUri = httpRequestUri;
 		this.protocol = protocol;
 	}
 
-	public static HttpHeader from(List<String> headers) {
+	public static HttpRequestHeader from(List<String> headers) {
 		if (headers == null || headers.isEmpty()) {
 			throw new IllegalArgumentException(String.format("invalid header. headers: %s", headers));
 		}
@@ -30,7 +30,7 @@ public class HttpHeader {
 		HttpRequestUri httpRequestUri = HttpRequestUri.from(firstHeaderLine.get("uri"));
 		String protocol = firstHeaderLine.get("protocol");
 
-		HttpHeader header = new HttpHeader(httpMethod, httpRequestUri, protocol);
+		HttpRequestHeader header = new HttpRequestHeader(httpMethod, httpRequestUri, protocol);
 
 		for (int i = 1; i < headers.size(); i++) {
 			HttpRequestUtils.Pair pair = HttpRequestUtils.parseHeader(headers.get(i));
@@ -47,20 +47,12 @@ public class HttpHeader {
 		this.fields.put(key, value);
 	}
 
-	public String getHeader(String key) {
-		return this.fields.get(key);
-	}
-
 	public HttpMethod getHttpMethod() {
 		return httpMethod;
 	}
 
 	public HttpRequestUri getHttpRequestUri() {
 		return httpRequestUri;
-	}
-
-	public String getProtocol() {
-		return protocol;
 	}
 
 	public int getContentLength() {

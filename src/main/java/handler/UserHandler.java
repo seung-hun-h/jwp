@@ -1,0 +1,102 @@
+package handler;
+
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.net.HttpHeaders;
+import db.DataBase;
+import model.User;
+import util.HttpRequestUtils;
+import webserver.HttpMethod;
+import webserver.HttpRequest;
+import webserver.HttpResponse;
+import webserver.HttpResponseHeader;
+import webserver.HttpStatus;
+
+public class UserHandler implements Handler {
+	private static final Logger log = LoggerFactory.getLogger(UserHandler.class);
+	@Override
+	public boolean isPossible(HttpRequest httpRequest) {
+		return httpRequest.getRequestUri()
+			.startsWith("/user");
+	}
+
+	@Override
+	public HttpResponse handle(HttpRequest httpRequest) {
+		if (isCreateUserRequest(httpRequest)) {
+			return createUser(
+				HttpRequestUtils.parseQueryString(
+					httpRequest.getHttpBody()
+				)
+			);
+		}
+
+		if (isLoginRequest(httpRequest)) {
+			return login(
+				HttpRequestUtils.parseQueryString(
+					httpRequest.getHttpBody()
+				)
+			);
+		}
+
+		throw new IllegalStateException(
+			String.format("Cannot handle request. http request = %s", httpRequest)
+		);
+	}
+
+	private boolean isCreateUserRequest(HttpRequest httpRequest) {
+		return httpRequest.getHttpMethod() == HttpMethod.POST &&
+			httpRequest.getRequestUri()
+				.equals("/user/create");
+	}
+
+	private boolean isLoginRequest(HttpRequest httpRequest) {
+		return httpRequest.getHttpMethod() == HttpMethod.POST &&
+			httpRequest.getRequestUri()
+				.equals("/user/login");
+	}
+
+	private HttpResponse createUser(Map<String, String> params) {
+		User user = new User(
+			params.get("userId"),
+			params.get("password"),
+			params.get("name"),
+			params.get("email")
+		);
+
+		DataBase.addUser(user);
+
+		log.info("User is created. user = {}", user);
+
+		HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
+		header.putHeader("Location", "/index.html");
+
+		return new HttpResponse(header);
+	}
+
+
+	private HttpResponse login(Map<String, String> params) {
+		User user = DataBase.findUserById(
+			params.get("userId")
+		);
+
+		boolean success = false;
+		if (user != null) {
+			success = user.login(params.get("password"));
+		}
+
+
+		if (success) {
+			HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
+			header.putHeader(HttpHeaders.CONTENT_LENGTH, "0");
+			header.putHeader("Location", "/index.html");
+			header.addCookie("logined", "true");
+			return new HttpResponse(header);
+		}
+
+		HttpResponseHeader header = new HttpResponseHeader(HttpStatus.UNAUTHORIZED);
+		return new HttpResponse(header);
+	}
+}
