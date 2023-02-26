@@ -1,4 +1,4 @@
-package handler;
+package webserver.handler;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -6,11 +6,11 @@ import java.nio.file.Path;
 import java.util.regex.Pattern;
 
 import com.google.common.net.HttpHeaders;
-import webserver.HttpContentType;
-import webserver.HttpRequest;
-import webserver.HttpResponse;
-import webserver.HttpResponseHeader;
-import webserver.HttpStatus;
+import webserver.http.HttpContentType;
+import webserver.http.HttpRequest;
+import webserver.http.HttpResponse;
+import webserver.http.HttpResponseHeader;
+import webserver.http.HttpStatus;
 
 public class ResourceHandler implements Handler {
 	private static final String ROOT = "/";

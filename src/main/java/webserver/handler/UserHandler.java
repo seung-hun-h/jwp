@@ -1,4 +1,4 @@
-package handler;
+package webserver.handler;
 
 import java.util.Map;
 
@@ -9,14 +9,15 @@ import com.google.common.net.HttpHeaders;
 import db.DataBase;
 import model.User;
 import util.HttpRequestUtils;
-import webserver.HttpMethod;
-import webserver.HttpRequest;
-import webserver.HttpResponse;
-import webserver.HttpResponseHeader;
-import webserver.HttpStatus;
+import webserver.http.HttpMethod;
+import webserver.http.HttpRequest;
+import webserver.http.HttpResponse;
+import webserver.http.HttpResponseHeader;
+import webserver.http.HttpStatus;
 
 public class UserHandler implements Handler {
 	private static final Logger log = LoggerFactory.getLogger(UserHandler.class);
+
 	@Override
 	public boolean isPossible(HttpRequest httpRequest) {
 		return httpRequest.getRequestUri()
