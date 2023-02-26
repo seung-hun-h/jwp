@@ -6,7 +6,7 @@ import java.util.Map;
 import util.HttpRequestUtils;
 
 public class HttpRequestUri {
-	public static final String QUERY_STRING_SEPARATOR = "?";
+	private static final String QUERY_STRING_SEPARATOR = "?";
 	private final String uri;
 	private final Map<String, String> queryParam = new HashMap<>();
 
@@ -15,9 +15,10 @@ public class HttpRequestUri {
 	}
 
 	public static HttpRequestUri from(String httpUri) {
-		if (!httpUri.contains(QUERY_STRING_SEPARATOR)) {
+		if (isNotContainsQueryStringSeparator(httpUri)) {
 			return new HttpRequestUri(httpUri);
 		}
+
 		HttpRequestUri httpRequestUri = new HttpRequestUri(httpUri.substring(0, httpUri.indexOf(QUERY_STRING_SEPARATOR)));
 
 		String queryString = httpUri.substring(httpUri.indexOf(QUERY_STRING_SEPARATOR) + 1);
@@ -26,6 +27,10 @@ public class HttpRequestUri {
 		httpRequestUri.putQueryParams(parseQueryString);
 
 		return httpRequestUri;
+	}
+
+	private static boolean isNotContainsQueryStringSeparator(String httpUri) {
+		return !httpUri.contains(QUERY_STRING_SEPARATOR);
 	}
 
 	private void putQueryParams(Map<String, String> queryParam) {

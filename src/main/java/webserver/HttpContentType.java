@@ -1,6 +1,10 @@
 package webserver;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public enum HttpContentType {
 	TEXT_PLAIN("txt", "text/plain;charset=utf-8"),
@@ -18,6 +22,14 @@ public enum HttpContentType {
 	IMAGE_X_ICON("ico", "image/x-icon"),
 	APPLICATION_OCTET_STREAM("", "application/octet-stream");
 
+	private static final Map<String, HttpContentType> EXTENSION_TO_CONTENT_TYPE;
+
+	static {
+		EXTENSION_TO_CONTENT_TYPE = Arrays.stream(values())
+			.collect(Collectors.toMap(HttpContentType::getExtension, Function.identity()));
+
+	}
+
 	private final String extension;
 	private final String contentType;
 
@@ -27,19 +39,24 @@ public enum HttpContentType {
 	}
 
 	public static String getContentType(String fileName) {
-		int dotIndex = fileName.lastIndexOf(".");
-		if (dotIndex == -1) {
-			return APPLICATION_OCTET_STREAM.contentType;
-		}
+		String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
 
-		String extension = fileName.substring(dotIndex + 1);
-		return Arrays.stream(values())
-			.filter(httpContentType -> httpContentType.extension.equals(extension))
-			.findFirst()
-			.map(httpContentType -> httpContentType.contentType)
-			.orElse(APPLICATION_OCTET_STREAM.contentType);
+		return Optional.ofNullable(
+			EXTENSION_TO_CONTENT_TYPE.get(extension)
+		).map(
+			HttpContentType::getContentType
+		).orElse(
+			APPLICATION_OCTET_STREAM.getContentType()
+		);
 	}
 
+	public String getContentType() {
+		return contentType;
+	}
+
+	public String getExtension() {
+		return extension;
+	}
 }
 
 

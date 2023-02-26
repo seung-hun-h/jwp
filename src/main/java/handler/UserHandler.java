@@ -82,21 +82,21 @@ public class UserHandler implements Handler {
 			params.get("userId")
 		);
 
-		boolean success = false;
+		boolean logined = false;
 		if (user != null) {
-			success = user.login(params.get("password"));
+			logined = user.login(params.get("password"));
 		}
 
+		HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
+		header.putHeader(HttpHeaders.CONTENT_LENGTH, "0");
+		header.addCookie("logined", String.valueOf(logined));
 
-		if (success) {
-			HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
-			header.putHeader(HttpHeaders.CONTENT_LENGTH, "0");
+		if (logined) {
 			header.putHeader("Location", "/index.html");
-			header.addCookie("logined", "true");
-			return new HttpResponse(header);
+		} else {
+			header.putHeader("Location", "/user/login_failed.html");
 		}
 
-		HttpResponseHeader header = new HttpResponseHeader(HttpStatus.UNAUTHORIZED);
 		return new HttpResponse(header);
 	}
 }
