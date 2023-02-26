@@ -33,6 +33,20 @@ public class HttpResponseHeader {
 		headers.put("Set-Cookie", cookies);
 	}
 
+	public void addCookiePath(String path) {
+		String cookies = headers.get("Set-Cookie");
+
+		if (cookies == null) {
+			return;
+		}
+
+		if (cookies.contains("; path=")) {
+			cookies = cookies.substring(0, cookies.indexOf("; path="));
+		}
+
+		headers.put("Set-Cookie", cookies + String.format("; path=%s", path));
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder stringBuilder = new StringBuilder();

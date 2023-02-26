@@ -8,6 +8,9 @@ import com.google.common.net.HttpHeaders;
 import util.HttpRequestUtils;
 
 public class HttpRequestHeader {
+	private static final String COOKIE_SEPARATOR = ",";
+	private static final String EMPTH_STRING = "";
+
 	private final HttpMethod httpMethod;
 	private final HttpRequestUri httpRequestUri;
 	private final String protocol;
@@ -58,6 +61,21 @@ public class HttpRequestHeader {
 	public int getContentLength() {
 		String value = fields.getOrDefault(HttpHeaders.CONTENT_LENGTH, "0");
 		return Integer.parseInt(value);
+	}
+
+	public String getCookie(String cookieName) {
+		Map<String, String> cookie = HttpRequestUtils.parseCookies(fields.getOrDefault("Cookie", EMPTH_STRING));
+
+		if (notExistCookie(cookie, cookieName)) {
+			return "";
+		}
+
+		return cookie.get(cookieName)
+			.split(COOKIE_SEPARATOR)[0];
+	}
+
+	private boolean notExistCookie(Map<String, String> cookie, String cookieName) {
+		return !cookie.containsKey(cookieName);
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package webserver.handler;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -9,6 +11,7 @@ import com.google.common.net.HttpHeaders;
 import db.DataBase;
 import model.User;
 import util.HttpRequestUtils;
+import webserver.http.HttpContentType;
 import webserver.http.HttpMethod;
 import webserver.http.HttpRequest;
 import webserver.http.HttpResponse;
@@ -27,24 +30,101 @@ public class UserHandler implements Handler {
 	@Override
 	public HttpResponse handle(HttpRequest httpRequest) {
 		if (isCreateUserRequest(httpRequest)) {
-			return createUser(
+			createUser(
 				HttpRequestUtils.parseQueryString(
 					httpRequest.getHttpBody()
 				)
 			);
+
+			HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
+			header.putHeader("Location", "/index.html");
+
+			return new HttpResponse(header);
 		}
 
 		if (isLoginRequest(httpRequest)) {
-			return login(
+			boolean logined = login(
 				HttpRequestUtils.parseQueryString(
 					httpRequest.getHttpBody()
 				)
 			);
+
+			if (!logined) {
+				return responseNotLogined();
+			}
+
+			HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
+			header.putHeader(HttpHeaders.CONTENT_LENGTH, "0");
+			header.addCookie("logined", "true");
+			header.addCookiePath("/");
+			header.putHeader("Location", "/index.html");
+			return new HttpResponse(header);
+		}
+
+		if (isGetUserListRequest(httpRequest)) {
+			String logined = httpRequest.getCookie("logined");
+
+			if (isNotLogined(logined)) {
+				return responseNotLogined();
+			}
+
+			List<User> users = getUsers();
+
+			StringBuilder stringBuilder = new StringBuilder("<table>"
+				+ "	<tr>"
+				+ "		<th>id</th>"
+				+ "		<th>name</th>"
+				+ "		<th>email</th>"
+				+ "	</tr>");
+
+			stringBuilder.append("	<tbody>");
+			for (User user : users) {
+				stringBuilder.append("		<tr>");
+
+				stringBuilder.append(String.format("			"
+					+ "<td>%s</td>"
+					+ "<td>%s</td>"
+					+ "<td>%s</td>",
+					user.getUserId(), user.getName(), user.getEmail())
+				);
+
+				stringBuilder.append("		</tr>");
+			}
+			stringBuilder.append("	</tbody>");
+
+			stringBuilder.append("</table>");
+
+			byte[] body = stringBuilder.toString()
+				.getBytes();
+
+			HttpResponseHeader header = new HttpResponseHeader(HttpStatus.OK);
+			header.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(body.length));
+			header.putHeader(HttpHeaders.CONTENT_TYPE, HttpContentType.TEXT_HTML.getContentType());
+			return new HttpResponse(header, body);
 		}
 
 		throw new IllegalStateException(
 			String.format("Cannot handle request. http request = %s", httpRequest)
 		);
+	}
+
+	private HttpResponse responseNotLogined() {
+		HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
+		header.putHeader(HttpHeaders.CONTENT_LENGTH, "0");
+		header.putHeader("Location", "/user/login_failed.html");
+		header.addCookie("logined", "false");
+		header.addCookiePath("/");
+		return new HttpResponse(header);
+	}
+
+	private static boolean isNotLogined(String logined) {
+		return logined == null || !logined.equals("true");
+	}
+
+	private boolean isGetUserListRequest(HttpRequest httpRequest) {
+		return httpRequest.getHttpMethod() == HttpMethod.GET &&
+			httpRequest.getRequestUri()
+				.equals("/user/list");
 	}
 
 	private boolean isCreateUserRequest(HttpRequest httpRequest) {
@@ -59,7 +139,7 @@ public class UserHandler implements Handler {
 				.equals("/user/login");
 	}
 
-	private HttpResponse createUser(Map<String, String> params) {
+	private void createUser(Map<String, String> params) {
 		User user = new User(
 			params.get("userId"),
 			params.get("password"),
@@ -70,34 +150,22 @@ public class UserHandler implements Handler {
 		DataBase.addUser(user);
 
 		log.info("User is created. user = {}", user);
-
-		HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
-		header.putHeader("Location", "/index.html");
-
-		return new HttpResponse(header);
 	}
 
-
-	private HttpResponse login(Map<String, String> params) {
+	private boolean login(Map<String, String> params) {
 		User user = DataBase.findUserById(
 			params.get("userId")
 		);
 
-		boolean logined = false;
-		if (user != null) {
-			logined = user.login(params.get("password"));
+		if (user == null) {
+			return false;
 		}
 
-		HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
-		header.putHeader(HttpHeaders.CONTENT_LENGTH, "0");
-		header.addCookie("logined", String.valueOf(logined));
+		return user.login(params.get("password"));
+	}
 
-		if (logined) {
-			header.putHeader("Location", "/index.html");
-		} else {
-			header.putHeader("Location", "/user/login_failed.html");
-		}
-
-		return new HttpResponse(header);
+	private List<User> getUsers() {
+		return new ArrayList<>(DataBase.findAll());
 	}
 }
+

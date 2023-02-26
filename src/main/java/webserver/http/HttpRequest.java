@@ -52,6 +52,10 @@ public class HttpRequest {
 		return httpRequestHeader.getHttpMethod();
 	}
 
+	public String getCookie(String cookieName) {
+		return httpRequestHeader.getCookie(cookieName);
+	}
+
 	@Override
 	public String toString() {
 		return "HttpRequest{" +
