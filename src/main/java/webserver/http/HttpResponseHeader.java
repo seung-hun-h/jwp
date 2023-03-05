@@ -1,50 +1,59 @@
 package webserver.http;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import com.google.common.net.HttpHeaders;
 
 public class HttpResponseHeader {
 	private final Map<String, String> headers = new HashMap<>();
+	private final List<Cookie> cookies = new ArrayList<>();
+
 	private String protocol = "HTTP/1.1";
-	private final HttpStatus httpStatus;
+	private HttpStatus httpStatus;
+
+	public HttpResponseHeader() {
+	}
 
 	public HttpResponseHeader(HttpStatus httpStatus) {
 		this.httpStatus = httpStatus;
 	}
 
-	public HttpResponseHeader(String protocol, HttpStatus httpStatus) {
-		this.protocol = protocol;
-		this.httpStatus = httpStatus;
-	}
-
 	public void putHeader(String key, String value) {
-		headers.put(key, value);
+		putHeaderInternal(key, value);
 	}
 
-	public void addCookie(String key, String value) {
-		String cookies = headers.getOrDefault("Set-Cookie", "");
-
-		if (cookies.isBlank()) {
-			cookies = key + "=" + value;
-		} else {
-			cookies += "," + key + "=" + value;
-		}
-
-		headers.put("Set-Cookie", cookies);
-	}
-
-	public void addCookiePath(String path) {
-		String cookies = headers.get("Set-Cookie");
-
-		if (cookies == null) {
+	private void putHeaderInternal(String key, String value) {
+		if (key.equals(HttpHeaders.SET_COOKIE)) {
+			String[] splitValue = value.split("=");
+			addCookie(new Cookie(splitValue[0], splitValue[1]));
 			return;
 		}
 
-		if (cookies.contains("; path=")) {
-			cookies = cookies.substring(0, cookies.indexOf("; path="));
-		}
+		this.headers.put(key, value);
+	}
 
-		headers.put("Set-Cookie", cookies + String.format("; path=%s", path));
+	public void addCookie(Cookie newCookie) {
+		this.cookies.add(newCookie);
+	}
+
+	public Map<String, String> getHeaders() {
+		return Collections.unmodifiableMap(headers);
+	}
+
+	public List<Cookie> getCookies() {
+		return Collections.unmodifiableList(cookies);
+	}
+
+	public String getProtocol() {
+		return protocol;
+	}
+
+	public HttpStatus getHttpStatus() {
+		return httpStatus;
 	}
 
 	@Override
@@ -64,5 +73,9 @@ public class HttpResponseHeader {
 		}
 
 		return stringBuilder.toString();
+	}
+
+	public void setStatus(HttpStatus httpStatus) {
+		this.httpStatus = httpStatus;
 	}
 }

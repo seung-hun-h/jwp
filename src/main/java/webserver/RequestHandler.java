@@ -1,7 +1,6 @@
 package webserver;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,35 +34,23 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream();
              OutputStream out = connection.getOutputStream();
-             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
-             DataOutputStream dataOutputStream = new DataOutputStream(out)
+             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in))
         ) {
             HttpRequest httpRequest = HttpRequest.from(bufferedReader);
+            HttpResponse httpResponse = new HttpResponse(out);
 
             log.info("HttpRequest: {}", httpRequest);
 
             if (resourceHandler.isPossible(httpRequest)) {
-                HttpResponse httpResponse = resourceHandler.handle(httpRequest);
-                response(dataOutputStream, httpResponse);
+                resourceHandler.handle(httpRequest, httpResponse);
+                httpResponse.flush();
                 return;
             }
 
             if (userHandler.isPossible(httpRequest)) {
-                HttpResponse httpResponse = userHandler.handle(httpRequest);
-                response(dataOutputStream, httpResponse);
+                userHandler.handle(httpRequest, httpResponse);
+                httpResponse.flush();
             }
-        } catch (IOException e) {
-            log.error(e.getMessage());
-        }
-    }
-
-    private void response(DataOutputStream dos, HttpResponse httpResponse) {
-        log.info("Http Response: {}", httpResponse);
-        try {
-            dos.writeBytes(httpResponse.getHttpResponseHeader());
-            dos.writeBytes("\r\n");
-            dos.write(httpResponse.getHttpBody(), 0, httpResponse.getHttpBody().length);
-            dos.flush();
         } catch (IOException e) {
             log.error(e.getMessage());
         }

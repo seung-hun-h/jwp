@@ -27,7 +27,7 @@ public class ResourceHandler implements Handler {
 	}
 
 	@Override
-	public HttpResponse handle(HttpRequest httpRequest) {
+	public void handle(HttpRequest httpRequest, HttpResponse httpResponse) {
 		try {
 			HttpResponseHeader header = new HttpResponseHeader(HttpStatus.OK);
 
@@ -39,12 +39,12 @@ public class ResourceHandler implements Handler {
 			);
 
 			byte[] body = serve(httpRequest.getRequestUri());
-			header.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(body.length));
 
-			return new HttpResponse(header, body);
+			httpResponse.setHttpResponseHeader(header);
+			httpResponse.writeBody(body);
+
 		} catch (IOException exception) {
-			HttpResponseHeader header = new HttpResponseHeader(HttpStatus.INTERNAL_SERVER_ERROR);
-			return new HttpResponse(header);
+			httpResponse.sendError(HttpStatus.INTERNAL_SERVER_ERROR, "Cannot serve resources!");
 		}
 	}
 

@@ -52,8 +52,12 @@ public class HttpRequest {
 		return httpRequestHeader.getHttpMethod();
 	}
 
-	public String getCookie(String cookieName) {
-		return httpRequestHeader.getCookie(cookieName);
+	public Cookie getCookie(String cookieName) {
+		return httpRequestHeader.getCookies()
+			.stream()
+			.filter(cookie -> cookie.getName().equals(cookieName))
+			.findAny()
+			.orElse(null);
 	}
 
 	@Override

@@ -11,6 +11,7 @@ import com.google.common.net.HttpHeaders;
 import db.DataBase;
 import model.User;
 import util.HttpRequestUtils;
+import webserver.http.Cookie;
 import webserver.http.HttpContentType;
 import webserver.http.HttpMethod;
 import webserver.http.HttpRequest;
@@ -28,18 +29,18 @@ public class UserHandler implements Handler {
 	}
 
 	@Override
-	public HttpResponse handle(HttpRequest httpRequest) {
+	public void handle(HttpRequest httpRequest, HttpResponse httpResponse) {
 		if (isCreateUserRequest(httpRequest)) {
 			createUser(
 				HttpRequestUtils.parseQueryString(
 					httpRequest.getHttpBody()
 				)
 			);
+			HttpResponseHeader httpResponseHeader = new HttpResponseHeader();
+			httpResponse.setHttpResponseHeader(httpResponseHeader);
 
-			HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
-			header.putHeader("Location", "/index.html");
-
-			return new HttpResponse(header);
+			httpResponse.sendRedirect("/index.html");
+			return;
 		}
 
 		if (isLoginRequest(httpRequest)) {
@@ -49,23 +50,29 @@ public class UserHandler implements Handler {
 				)
 			);
 
-			if (!logined) {
-				return responseNotLogined();
+			if (logined) {
+				Cookie cookie = new Cookie("logined", "true");
+				cookie.addPath("/");
+				httpResponse.addCookie(cookie);
+				httpResponse.sendRedirect("/index.html");
+				return;
 			}
 
-			HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
-			header.putHeader(HttpHeaders.CONTENT_LENGTH, "0");
-			header.addCookie("logined", "true");
-			header.addCookiePath("/");
-			header.putHeader("Location", "/index.html");
-			return new HttpResponse(header);
+			Cookie cookie = new Cookie("logined", "false");
+			cookie.addPath("/");
+			httpResponse.addCookie(cookie);
+			httpResponse.sendRedirect("/user/login_failed.html");
+			return;
 		}
 
 		if (isGetUserListRequest(httpRequest)) {
-			String logined = httpRequest.getCookie("logined");
+			Cookie logined = httpRequest.getCookie("logined");
 
 			if (isNotLogined(logined)) {
-				return responseNotLogined();
+				Cookie cookie = new Cookie("logined", "false");
+				cookie.addPath("/");
+				httpResponse.addCookie(cookie);
+				httpResponse.sendRedirect("/user/login_failed.html");
 			}
 
 			List<User> users = getUsers();
@@ -94,13 +101,12 @@ public class UserHandler implements Handler {
 
 			stringBuilder.append("</table>");
 
-			byte[] body = stringBuilder.toString()
-				.getBytes();
-
 			HttpResponseHeader header = new HttpResponseHeader(HttpStatus.OK);
-			header.putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(body.length));
 			header.putHeader(HttpHeaders.CONTENT_TYPE, HttpContentType.TEXT_HTML.getContentType());
-			return new HttpResponse(header, body);
+
+			httpResponse.setHttpResponseHeader(header);
+			httpResponse.writeBody(stringBuilder.toString());
+			return;
 		}
 
 		throw new IllegalStateException(
@@ -108,17 +114,8 @@ public class UserHandler implements Handler {
 		);
 	}
 
-	private HttpResponse responseNotLogined() {
-		HttpResponseHeader header = new HttpResponseHeader(HttpStatus.FOUND);
-		header.putHeader(HttpHeaders.CONTENT_LENGTH, "0");
-		header.putHeader("Location", "/user/login_failed.html");
-		header.addCookie("logined", "false");
-		header.addCookiePath("/");
-		return new HttpResponse(header);
-	}
-
-	private static boolean isNotLogined(String logined) {
-		return logined == null || !logined.equals("true");
+	private static boolean isNotLogined(Cookie cookie) {
+		return cookie == null || !cookie.equals(new Cookie("logined", "true"));
 	}
 
 	private boolean isGetUserListRequest(HttpRequest httpRequest) {
