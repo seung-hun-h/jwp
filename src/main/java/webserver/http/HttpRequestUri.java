@@ -33,12 +33,16 @@ public class HttpRequestUri {
 		return !httpUri.contains(QUERY_STRING_SEPARATOR);
 	}
 
-	private void putQueryParams(Map<String, String> queryParam) {
+	public void putQueryParams(Map<String, String> queryParam) {
 		this.queryParam.putAll(queryParam);
 	}
 
 	public String getUri() {
 		return this.uri;
+	}
+
+	public String getQueryValue(String key) {
+		return queryParam.get(key);
 	}
 
 	@Override

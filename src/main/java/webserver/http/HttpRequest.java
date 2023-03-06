@@ -2,9 +2,13 @@ package webserver.http;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
+import util.HttpRequestUtils;
 import util.IOUtils;
 
 public class HttpRequest {
@@ -16,26 +20,35 @@ public class HttpRequest {
 		this.httpBody = httpBody;
 	}
 
-	public static HttpRequest from(BufferedReader bufferedReader) throws IOException {
-		String line = bufferedReader.readLine();
-		if (line == null) {
-			throw new IllegalArgumentException("Wrong Http Request");
+	public static HttpRequest parse(InputStream inputStream) throws IOException {
+		Objects.requireNonNull(inputStream);
+
+		try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+			String line = bufferedReader.readLine();
+			if (line == null) {
+				throw new IllegalArgumentException("Wrong Http Request");
+			}
+
+			List<String> httpHeaders = new ArrayList<>();
+			while (!line.isBlank()) {
+				httpHeaders.add(line);
+				line = bufferedReader.readLine();
+			}
+
+			HttpRequestHeader httpRequestHeader = HttpRequestHeader.from(httpHeaders);
+
+			String body = IOUtils.readData(
+				bufferedReader,
+				httpRequestHeader.getContentLength()
+			);
+
+			if (httpRequestHeader.isFormData()) {
+				httpRequestHeader.addRequestParameters(HttpRequestUtils.parseQueryString(body));
+				return new HttpRequest(httpRequestHeader, null);
+			}
+
+			return new HttpRequest(httpRequestHeader, body);
 		}
-
-		List<String> httpHeaders = new ArrayList<>();
-		while (!line.isBlank()) {
-			httpHeaders.add(line);
-			line = bufferedReader.readLine();
-		}
-
-		HttpRequestHeader httpRequestHeader = HttpRequestHeader.from(httpHeaders);
-
-		String body = IOUtils.readData(
-			bufferedReader,
-			httpRequestHeader.getContentLength()
-		);
-
-		return new HttpRequest(httpRequestHeader, body);
 	}
 
 	public String getRequestUri() {
@@ -58,6 +71,14 @@ public class HttpRequest {
 			.filter(cookie -> cookie.getName().equals(cookieName))
 			.findAny()
 			.orElse(null);
+	}
+
+	public String getHeader(String key) {
+		return httpRequestHeader.getHeader(key);
+	}
+
+	public String getRequestParameter(String key) {
+		return httpRequestHeader.getRequestParameter(key);
 	}
 
 	@Override

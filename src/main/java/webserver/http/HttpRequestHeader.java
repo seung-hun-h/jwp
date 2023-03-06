@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
 import util.HttpRequestUtils;
 
 public class HttpRequestHeader {
@@ -80,6 +81,19 @@ public class HttpRequestHeader {
 		return new ArrayList<>(this.cookies);
 	}
 
+	public String getHeader(String key) {
+		return fields.get(key);
+	}
+
+	public void addRequestParameters(Map<String, String> requestParameters) {
+		httpRequestUri.putQueryParams(requestParameters);
+	}
+
+	public boolean isFormData() {
+		return fields.getOrDefault(HttpHeaders.CONTENT_TYPE, "")
+			.equals(MediaType.FORM_DATA.toString());
+	}
+
 	@Override
 	public String toString() {
 		return "HttpHeader{" +
@@ -88,5 +102,9 @@ public class HttpRequestHeader {
 			", protocol='" + protocol + '\'' +
 			", fields=" + fields +
 			'}';
+	}
+
+	public String getRequestParameter(String key) {
+		return httpRequestUri.getQueryValue(key);
 	}
 }

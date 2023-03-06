@@ -1,9 +1,7 @@
 package webserver;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 
@@ -33,10 +31,9 @@ public class RequestHandler extends Thread {
             connection.getPort());
 
         try (InputStream in = connection.getInputStream();
-             OutputStream out = connection.getOutputStream();
-             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in))
+             OutputStream out = connection.getOutputStream()
         ) {
-            HttpRequest httpRequest = HttpRequest.from(bufferedReader);
+            HttpRequest httpRequest = HttpRequest.parse(in);
             HttpResponse httpResponse = new HttpResponse(out);
 
             log.info("HttpRequest: {}", httpRequest);
