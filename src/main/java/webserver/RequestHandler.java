@@ -4,12 +4,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import webserver.handler.ResourceHandler;
-import webserver.handler.UserHandler;
+import webserver.controller.Controller;
+import webserver.controller.CreateUserController;
+import webserver.controller.ListUserController;
+import webserver.controller.LoginController;
 import webserver.http.HttpRequest;
 import webserver.http.HttpResponse;
 
@@ -17,13 +21,14 @@ public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
     private final Socket connection;
-    private final ResourceHandler resourceHandler;
-    private final UserHandler userHandler;
+    private final Map<String, Controller> handlerMapping = new HashMap<>();
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
-        this.resourceHandler = new ResourceHandler();
-        this.userHandler = new UserHandler();
+
+        handlerMapping.put("/user/create", new CreateUserController());
+        handlerMapping.put("/user/list", new ListUserController());
+        handlerMapping.put("/user/login", new LoginController());
     }
 
     public void run() {
@@ -38,18 +43,25 @@ public class RequestHandler extends Thread {
 
             log.info("HttpRequest: {}", httpRequest);
 
-            if (resourceHandler.isPossible(httpRequest)) {
-                resourceHandler.handle(httpRequest, httpResponse);
-                httpResponse.flush();
+            String requestUri = httpRequest.getRequestUri();
+            Controller controller = handlerMapping.get(requestUri);
+
+            if (controller == null) {
+                httpResponse.forward(getDefaultUri(requestUri));
                 return;
             }
 
-            if (userHandler.isPossible(httpRequest)) {
-                userHandler.handle(httpRequest, httpResponse);
-                httpResponse.flush();
-            }
+            controller.service(httpRequest, httpResponse);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
+
+    private String getDefaultUri(String uri) {
+        if (uri.equals("/")) {
+            return "/index.html";
+        }
+        return uri;
+    }
+
 }

@@ -23,42 +23,38 @@ public class HttpRequest {
 	public static HttpRequest parse(InputStream inputStream) throws IOException {
 		Objects.requireNonNull(inputStream);
 
-		try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
-			String line = bufferedReader.readLine();
-			if (line == null) {
-				throw new IllegalArgumentException("Wrong Http Request");
-			}
-
-			List<String> httpHeaders = new ArrayList<>();
-			while (!line.isBlank()) {
-				httpHeaders.add(line);
-				line = bufferedReader.readLine();
-			}
-
-			HttpRequestHeader httpRequestHeader = HttpRequestHeader.from(httpHeaders);
-
-			String body = IOUtils.readData(
-				bufferedReader,
-				httpRequestHeader.getContentLength()
-			);
-
-			if (httpRequestHeader.isFormData()) {
-				httpRequestHeader.addRequestParameters(HttpRequestUtils.parseQueryString(body));
-				return new HttpRequest(httpRequestHeader, null);
-			}
-
-			return new HttpRequest(httpRequestHeader, body);
+		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+		String line = bufferedReader.readLine();
+		if (line == null) {
+			throw new IllegalArgumentException("Wrong Http Request");
 		}
+
+		List<String> httpHeaders = new ArrayList<>();
+		while (!line.isBlank()) {
+			httpHeaders.add(line);
+			line = bufferedReader.readLine();
+		}
+
+		HttpRequestHeader httpRequestHeader = HttpRequestHeader.from(httpHeaders);
+
+		String body = IOUtils.readData(
+			bufferedReader,
+			httpRequestHeader.getContentLength()
+		);
+
+		if (httpRequestHeader.isFormData()) {
+			httpRequestHeader.addRequestParameters(HttpRequestUtils.parseQueryString(body));
+			return new HttpRequest(httpRequestHeader, null);
+		}
+
+		return new HttpRequest(httpRequestHeader, body);
+
 	}
 
 	public String getRequestUri() {
 		return this.httpRequestHeader
 			.getHttpRequestUri()
 			.getUri();
-	}
-
-	public String getHttpBody() {
-		return httpBody;
 	}
 
 	public HttpMethod getHttpMethod() {

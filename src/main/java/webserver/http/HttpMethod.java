@@ -13,4 +13,8 @@ public enum HttpMethod {
 			.findFirst()
 			.orElseThrow(() -> new IllegalArgumentException(String.format("unknown http method. method: %s", method)));
 	}
+
+	public boolean isPost() {
+		return this == POST;
+	}
 }

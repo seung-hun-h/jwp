@@ -15,9 +15,6 @@ public class HttpResponseHeader {
 	private String protocol = "HTTP/1.1";
 	private HttpStatus httpStatus;
 
-	public HttpResponseHeader() {
-	}
-
 	public HttpResponseHeader(HttpStatus httpStatus) {
 		this.httpStatus = httpStatus;
 	}
