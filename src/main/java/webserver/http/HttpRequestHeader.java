@@ -42,10 +42,12 @@ public class HttpRequestHeader {
 				continue;
 			}
 
-			if (pair.getKey().equals(HttpHeaders.COOKIE)) {
-				header.addCookie(pair.getValue());
+			String headerName = pair.getKey();
+			String cookie = pair.getValue();
+			if (headerName.equals(HttpHeaders.COOKIE)) {
+				header.addCookie(cookie);
 			}
-			header.putField(pair.getKey(), pair.getValue());
+			header.putField(headerName, cookie);
 		}
 
 		return header;
