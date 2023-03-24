@@ -77,6 +77,11 @@ public class HttpRequest {
 		return httpRequestHeader.getRequestParameter(key);
 	}
 
+	public HttpSession getSession() {
+		Cookie cookie = getCookie("JSESSIONID");
+		return HttpSessions.get(cookie.getValue());
+	}
+
 	@Override
 	public String toString() {
 		return "HttpRequest{" +

@@ -7,12 +7,16 @@ import model.User;
 import webserver.http.Cookie;
 import webserver.http.HttpRequest;
 import webserver.http.HttpResponse;
+import webserver.http.HttpSession;
 
 public class ListUserController extends AbstractController {
 	private boolean isNotLogined(HttpRequest httpRequest) {
 		Cookie cookie = httpRequest.getCookie("logined");
 
-		return cookie == null || !cookie.getValue().equals("true");
+		HttpSession session = httpRequest.getSession();
+		Object user = session.getAttribute("user");
+
+		return user == null;
 	}
 
 	@Override

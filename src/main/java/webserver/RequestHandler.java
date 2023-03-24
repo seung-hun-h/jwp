@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,8 +15,11 @@ import webserver.controller.Controller;
 import webserver.controller.CreateUserController;
 import webserver.controller.ListUserController;
 import webserver.controller.LoginController;
+import webserver.http.Cookie;
 import webserver.http.HttpRequest;
 import webserver.http.HttpResponse;
+import webserver.http.HttpSession;
+import webserver.http.HttpSessions;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -42,6 +46,11 @@ public class RequestHandler extends Thread {
             HttpResponse httpResponse = new HttpResponse(out);
 
             log.info("HttpRequest: {}", httpRequest);
+
+            if (httpRequest.getCookie("JSESSIONID") == null) {
+                Cookie cookie = new Cookie("JSESSIONID", UUID.randomUUID().toString());
+                httpResponse.addCookie(cookie);
+            }
 
             String requestUri = httpRequest.getRequestUri();
             Controller controller = handlerMapping.get(requestUri);

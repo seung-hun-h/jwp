@@ -20,16 +20,11 @@ public class LoginController extends AbstractController {
 		User user = DataBase.findUserById(userId);
 
 		if (isLogined(user, password)) {
-			Cookie cookie = new Cookie("logined", "true");
-			cookie.addPath("/");
-			httpResponse.addCookie(cookie);
+			httpRequest.getSession().setAttribute("user", user);
 			httpResponse.sendRedirect("/index.html");
 			return;
 		}
 
-		Cookie cookie = new Cookie("logined", "false");
-		cookie.addPath("/");
-		httpResponse.addCookie(cookie);
 		httpResponse.sendRedirect("/user/login_failed.html");
 	}
 
